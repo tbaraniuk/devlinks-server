@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: devlinks_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - PYTHONPATH=/src
+      - DATABASE_URL=postgresql+psycopg2://${DB_USERNAME}:${DB_PASSWORD}@db:${DB_HOST}/${DB_MODEL}
+    volumes:
+      - ./app:/src/
+      - ./certs:/certs/
+    command: bash -c "sleep 30; uvicorn main:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      - db
+    ports:
+      - 8000:8000
+    restart: always
+    env_file:
+      - .env
+  db:
+    image: postgres:latest
+    container_name: devlinks_db
+    environment:
+      POSTGRES_DB: devlinks
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - 5433:${DB_HOST}
+    volumes:
+      - .postgres:/var/lib/postgres/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', '${DB_USERNAME}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+volumes:
+  postgres_data:
