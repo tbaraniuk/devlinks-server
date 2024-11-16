@@ -5,7 +5,6 @@ from sqlmodel import SQLModel, create_engine, Session
 from config import settings
 
 
-print(settings.db.url)
 engine = create_engine(settings.db.url, echo=settings.db.echo)
 
 

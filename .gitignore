@@ -148,3 +148,5 @@ certs/
 #.idea/
 
 client_secrets.json
+
+settings.yaml

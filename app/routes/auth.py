@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, status
 from sqlmodel import select
-from pydantic import EmailStr
 from typing import Annotated
 
 from auth.utils import hash_password, encode_jwt, verify_password
@@ -36,6 +35,9 @@ def validate_auth_user(
 
 @router.post('/register/', response_model=RegisterGetUserSchema, status_code=status.HTTP_201_CREATED)
 def create_user(user: UserCreate, session: SessionDep):
+    """
+    Register user
+    """
     db_user = session.exec(select(User).where(User.username == user.username)).first()
     if db_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Already registered")
@@ -60,6 +62,9 @@ def create_user(user: UserCreate, session: SessionDep):
 
 @router.post("/login/", response_model=Token)
 def auth_user(user: UserSchema = Depends(validate_auth_user)):
+    """
+    Login user
+    """
     jwt_payload = {
         "id": str(user.id),
         "username": user.username

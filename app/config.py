@@ -6,7 +6,10 @@ from pydantic_settings import BaseSettings
 
 
 load_dotenv(dotenv_path='../.env')
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parent
+
+
+
 
 
 class DbSettings(BaseModel):

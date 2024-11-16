@@ -7,7 +7,7 @@ from routes.auth import router as authRouter
 from database import create_db_and_tables
 
 
-app = FastAPI(title="Devlinks v1.4")
+app = FastAPI(title="Devlinks v1.0")
 
 
 origins = [

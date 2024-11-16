@@ -14,6 +14,9 @@ router = APIRouter(
 
 @router.post('/', response_model=GetLinksSchema)
 def get_links(links: list[LinkCreateSchema], session: SessionDep, user: UserSchema = Depends(get_current_user)):
+    """
+    Add links for currently authenticated user
+    """
     for link_data in links:
         link = Link(**link_data.model_dump(), owner_id=user.id)
         session.add(link)
