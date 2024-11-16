@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
-from schemas.user import UserSchema
-from schemas.link import GetLinksSchema, LinkCreateSchema
+from schemas.user import UserSchema, UserGet
+from schemas.link import LinkCreateSchema
 from auth.utils import get_current_user
 from database import SessionDep
 from models.link import Link
@@ -12,8 +12,8 @@ router = APIRouter(
 )
 
 
-@router.post('/', response_model=GetLinksSchema)
-def get_links(links: list[LinkCreateSchema], session: SessionDep, user: UserSchema = Depends(get_current_user)):
+@router.post('/', response_model=UserGet)
+def add_links(links: list[LinkCreateSchema], session: SessionDep, user: UserSchema = Depends(get_current_user)):
     """
     Add links for currently authenticated user
     """
@@ -24,4 +24,4 @@ def get_links(links: list[LinkCreateSchema], session: SessionDep, user: UserSche
     session.commit()
     session.refresh(user)
 
-    return {'links': user.links}
+    return {'user': user}
