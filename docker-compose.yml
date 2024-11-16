@@ -12,7 +12,6 @@ services:
     volumes:
       - ./app:/src/
       - ./client_secrets.json:/src/client_secrets.json
-      - ./settings.yaml:/src/settings.yaml
       - ./certs:/src/certs/
     command: bash -c "sleep 30; uvicorn main:app --host 0.0.0.0 --port 8000"
     depends_on:
@@ -32,7 +31,7 @@ services:
     ports:
       - 5433:${DB_HOST}
     volumes:
-      - .postgres:/var/lib/postgres/data
+      - .postgres_data:/var/lib/postgres/data
     env_file:
       - .env
     healthcheck:
