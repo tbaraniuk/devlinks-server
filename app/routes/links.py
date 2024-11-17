@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlmodel import select
+from sqlmodel import select, delete
 
 from schemas.user import UserSchema, UserGet
 from schemas.link import LinkCreateSchema
@@ -19,6 +19,8 @@ def add_links(links: list[LinkCreateSchema], session: SessionDep, currentUser: U
     """
     Add links for currently authenticated user
     """
+    session.exec(delete(Link).where(Link.owner_id == currentUser.id))
+
     for link_data in links:
         link = Link(**link_data.model_dump(), owner_id=currentUser.id)
         session.add(link)
