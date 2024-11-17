@@ -1,31 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlmodel import select
-from pydrive2.auth import GoogleAuth
-from pydrive2.drive import GoogleDrive
 import os
+import tempfile
+from fastapi import APIRouter, Depends, HTTPException, status, Form, File, UploadFile
+from sqlmodel import select
+from typing import Annotated
+from pydantic import EmailStr
 
 from database import SessionDep
-from schemas.user import UserGet, UserSchema, UserUpdate
+from schemas.user import UserGet, UserSchema
 from models.user import User
 from auth.utils import get_current_user
-from config import Settings
-
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-print(BASE_DIR)
-
-
-gauth = GoogleAuth()
-gauth.LoadClientConfigFile(os.path.join(BASE_DIR, 'client_secrets.json'))
-
-try:
-    gauth.LoadCredentialsFile(os.path.join(BASE_DIR, "credentials.json"))
-except Exception:
-    gauth.LocalWebserverAuth()
-    gauth.SaveCredentialsFile(os.path.join(BASE_DIR, "credentials.json"))
-
-
-drive = GoogleDrive(gauth)
+from config import settings
 
 
 router = APIRouter(
@@ -34,7 +18,7 @@ router = APIRouter(
 )
 
 
-@router.get('/me/')
+@router.get('/me/', response_model=UserGet)
 def get_user_self_info(user: UserSchema = Depends(get_current_user)):
     """
     Fetch details of the currently authenticated user.
@@ -45,7 +29,8 @@ def get_user_self_info(user: UserSchema = Depends(get_current_user)):
         "username": user.username,
         "first_name": user.first_name,
         "last_name": user.last_name,
-        "links": user.links
+        "links": user.links,
+        "avatar_id": user.avatar_id
     }
 
 
@@ -60,28 +45,37 @@ def get_user_profile(username: str, session: SessionDep):
     return db_user
 
 
-@router.post('/upload-avatar/')
-def upload_user_avatar(session: SessionDep, file: UploadFile = File(...), user: UserSchema = Depends(get_current_user)):
-    """
-    Upload a user avatar to Google Drive.
-    """
-    try:
-        drive_file = drive.CreateFile({'title': file.filename})
-        drive_file.SetContentFile(file)
-        drive_file.Upload()
-        print(drive_file)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-
 @router.put('/update-user/', response_model=UserGet, status_code=status.HTTP_200_OK)
-def update_user(user_update: UserUpdate, session: SessionDep, user: UserSchema = Depends(get_current_user)):
+def update_user(first_name: Annotated[str, Form()],
+                last_name: Annotated[str, Form()],
+                email: Annotated[EmailStr, Form()],
+                file: Annotated[UploadFile, File(...)],
+                session: SessionDep,
+                user: UserSchema = Depends(get_current_user)):
     """
     Update user profile details.
     """
-    user.first_name = user_update.first_name
-    user.last_name = user_update.last_name
-    user.email = user_update.email
+    user.first_name = first_name
+    user.last_name = last_name
+    user.email = email
+
+    if file:
+        try:
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                temp_file.write(file.file.read())
+                temp_file_path = temp_file.name
+
+            google_drive = settings.google_drive.drive
+            drive_file = google_drive.CreateFile({'title': file.filename})
+            drive_file.SetContentFile(temp_file_path)
+            drive_file.Upload()
+
+            user.avatar_id = drive_file['id']
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        finally:
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
 
     session.add(user)
     session.commit()

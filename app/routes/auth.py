@@ -9,7 +9,7 @@ from models.user import User
 from database import SessionDep
 
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def validate_auth_user(

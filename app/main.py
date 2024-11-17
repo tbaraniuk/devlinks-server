@@ -35,4 +35,3 @@ app.include_router(linksRouter)
 @app.get('/')
 def get_homepage():
     return {'page': 'homepage'}
-

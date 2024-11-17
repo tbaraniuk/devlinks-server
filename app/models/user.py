@@ -11,6 +11,7 @@ class User(SQLModel, table=True):
     username: str = Field(nullable=False, unique=True)
     first_name: str = Field(default=None, nullable=True)
     last_name: str = Field(default=None, nullable=True)
+    avatar_id: str = Field(default=None, nullable=True)
     email: EmailStr
     password: str
 

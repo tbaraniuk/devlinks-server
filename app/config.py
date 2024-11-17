@@ -1,15 +1,22 @@
+import logging
 import os
 from dotenv import load_dotenv
 from pathlib import Path
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
+from typing import ClassVar
+from oauth2client.client import OAuth2Credentials
+
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 load_dotenv(dotenv_path='../.env')
 BASE_DIR = Path(__file__).parent
-
-
-
 
 
 class DbSettings(BaseModel):
@@ -24,9 +31,30 @@ class AuthJWT(BaseModel):
     access_token_expire_minutes: int = 15
 
 
+class GoogleDriveAuth(BaseModel):
+    gauth: ClassVar[GoogleAuth] = GoogleAuth()
+    gauth.credentials = OAuth2Credentials(
+        token_uri=os.getenv("GOOGLE_REDIRECT_TOKEN"),
+        client_id=os.getenv("GOOGLE_CLIENT_ID"),
+        client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+        refresh_token=os.getenv("GOOGLE_REFRESH_TOKEN"),
+        access_token=os.getenv("GOOGLE_ACCESS_TOKEN"),
+        token_expiry=None,
+        user_agent=None,
+        revoke_uri=None,
+    )
+    try:
+        print("Initializing Google Drive...")
+        drive: ClassVar[GoogleDrive] = GoogleDrive(gauth)
+        print("Google Drive initialized successfully!")
+    except Exception as e:
+        print(f"Error initializing Google Drive: {e}")
+
+
 class Settings(BaseSettings):
     auth_jwt: AuthJWT = AuthJWT()
     db: DbSettings = DbSettings()
+    google_drive: GoogleDriveAuth = GoogleDriveAuth()
 
 
 settings = Settings()
