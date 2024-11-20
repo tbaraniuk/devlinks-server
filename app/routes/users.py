@@ -1,8 +1,9 @@
 import os
 import tempfile
 from fastapi import APIRouter, Depends, HTTPException, status, Form, File, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlmodel import select
-from typing import Annotated
+from typing import Annotated, Optional
 from pydantic import EmailStr
 
 from database import SessionDep
@@ -10,6 +11,7 @@ from schemas.user import UserGet, UserSchema
 from models.user import User
 from auth.utils import get_current_user
 from config import settings
+from helpers import get_drive_file
 
 
 router = APIRouter(
@@ -49,9 +51,9 @@ def get_user_profile(username: str, session: SessionDep):
 def update_user(first_name: Annotated[str, Form()],
                 last_name: Annotated[str, Form()],
                 email: Annotated[EmailStr, Form()],
-                file: Annotated[UploadFile, File(...)],
                 session: SessionDep,
-                user: UserSchema = Depends(get_current_user)):
+                user: UserSchema = Depends(get_current_user),
+                file: Annotated[Optional[UploadFile], File(description='Optional file upload')] = None):
     """
     Update user profile details.
     """
@@ -81,3 +83,17 @@ def update_user(first_name: Annotated[str, Form()],
     session.commit()
     session.refresh(user)
     return user
+
+
+@router.get("/get-avatar/{file_id}")
+async def get_avatar_image(file_id: str):
+    """Fetch image from Google Drive using file_id and return as image."""
+    try:
+        file_content, mime_type = get_drive_file(file_id)
+
+        return StreamingResponse(file_content, media_type=mime_type)
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
