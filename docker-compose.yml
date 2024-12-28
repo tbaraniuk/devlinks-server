@@ -31,7 +31,7 @@ services:
     ports:
       - 5433:${DB_HOST}
     volumes:
-      - .postgres_data:/var/lib/postgres/data
+      - /private/var/lib/postgresql:/var/lib/postgresql
     env_file:
       - .env
     healthcheck:
@@ -40,6 +40,3 @@ services:
       timeout: 5s
       retries: 5
     restart: always
-
-volumes:
-  postgres_data:

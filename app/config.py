@@ -19,6 +19,10 @@ load_dotenv(dotenv_path='../.env')
 BASE_DIR = Path(__file__).parent
 
 
+UPLOAD_DIR = "uploaded_images"
+Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+
+
 class DbSettings(BaseModel):
     url: str = os.getenv('DATABASE_URL')
     echo: bool = True
